@@ -331,10 +331,35 @@ export default function transformProps(
     type: legendType,
   });
 
+  const chartPadding = getChartPadding(
+    showLegend,
+    legendOrientation,
+    effectiveLegendMargin,
+  );
+
+  // The radar component does not support top/left/right/bottom layout
+  // options (only center/radius). Translate the legend padding into
+  // center and radius so that the legend margin control affects the
+  // radar plot.
+  const availableWidth = Math.max(
+    width - chartPadding.left - chartPadding.right,
+    0,
+  );
+  const availableHeight = Math.max(
+    height - chartPadding.top - chartPadding.bottom,
+    0,
+  );
+  const radarCenter: [number, number] = [
+    chartPadding.left + availableWidth / 2,
+    chartPadding.top + availableHeight / 2,
+  ];
+  // Mirror ECharts' default radius of 75% of min(width, height) / 2
+  // applied to the available area.
+  const radarRadius = (Math.min(availableWidth, availableHeight) / 2) * 0.75;
+
   const series: RadarSeriesOption[] = [
     {
       type: 'radar',
-      ...getChartPadding(showLegend, legendOrientation, effectiveLegendMargin),
       animation: false,
       emphasis: {
         label: {
@@ -383,6 +408,8 @@ export default function transformProps(
     radar: {
       shape: isCircle ? 'circle' : 'polygon',
       indicator,
+      center: radarCenter,
+      radius: radarRadius,
       splitLine: {
         show: true,
         lineStyle: {
