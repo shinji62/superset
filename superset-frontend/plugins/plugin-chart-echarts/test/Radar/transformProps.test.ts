@@ -202,3 +202,50 @@ describe('legend sorting', () => {
     ]);
   });
 });
+
+describe('legend margin affects radar position', () => {
+  const buildChartProps = (overrides: Partial<EchartsRadarFormData> = {}) =>
+    new ChartProps({
+      formData: {
+        ...formData,
+        ...overrides,
+      },
+      width: 800,
+      height: 600,
+      queriesData,
+      theme: supersetTheme,
+    });
+
+  test('shifts radar center down and shrinks radius when legend is on top', () => {
+    const props = buildChartProps({
+      showLegend: true,
+      legendOrientation: 'top',
+      legendMargin: 120,
+    } as Partial<EchartsRadarFormData>);
+    const result = transformProps(props as EchartsRadarChartProps);
+    const radar = result.echartOptions.radar as {
+      center: [number, number];
+      radius: number;
+    };
+
+    // With width=800, height=600 and a top legend margin of 120, the
+    // available area is 800x480 and the center should sit in the middle
+    // of that area (offset down by half the top padding).
+    expect(radar.center).toEqual([400, 360]);
+    expect(radar.radius).toBeCloseTo((Math.min(800, 480) / 2) * 0.75);
+  });
+
+  test('keeps radar centered when legend is hidden', () => {
+    const props = buildChartProps({
+      showLegend: false,
+    } as Partial<EchartsRadarFormData>);
+    const result = transformProps(props as EchartsRadarChartProps);
+    const radar = result.echartOptions.radar as {
+      center: [number, number];
+      radius: number;
+    };
+
+    expect(radar.center).toEqual([400, 300]);
+    expect(radar.radius).toBeCloseTo((Math.min(800, 600) / 2) * 0.75);
+  });
+});
